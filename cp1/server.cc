@@ -12,7 +12,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <libcurl>
 
 #include <sys/types.h>
 #include <optional>
@@ -182,7 +181,7 @@ private:
    *
    * @return 0 for pattern not found, 1 for pattern found in site contents
    */
-  int read_Website(char* url, char* pattern, char* siteID) {
+  int read_Website(char* url, std::regex pattern, char* siteID) {
     cout << url << endl;
     int scanSocket = create_Out_Socket(url);
 
@@ -285,7 +284,7 @@ private:
   std::string m_LogDirectory = "server-logs";
 
   // Format of CHECK requests
-  std::regex checkRequest("CHECK (([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))? ");
+  // std::regex checkRequest("CHECK (([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))? ");
 };
 
 /**
@@ -301,7 +300,7 @@ private:
  */
 int main(int argc, char * argv[]) {
   int listenPort = std::stoi(argv[1]);
-  string logDirectory = static_cast<std::string>(argv[2])
+  string logDirectory = static_cast<std::string>(argv[2]);
 
   AdCheckServer server = AdCheckServer(listenPort, logDirectory);
   server.startListening(std::stoi(argv[1]));
