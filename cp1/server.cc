@@ -1,17 +1,21 @@
-#include <cstring>
 #include <iostream>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
+
+#include <cstring>
 #include <string>
 #include <string.h>
+#include <regex>
+
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netdb.h>
+#include <libcurl>
+
 #include <sys/types.h>
 #include <optional>
-
 
 #include "SocketHelper.h"
 
@@ -26,13 +30,23 @@ class AdCheckServer
 public:
   /**
    * Default constructor
+   *
+   * @param[in] listenPort Port on which to listen for clients
    */
   AdCheckServer()
   {
     // placeholder
   }
 
-  AdCheckServer(int listenPort) : m_ListenPort(listenPort)
+  /**
+   * Overloaded constructor
+   *
+   * @param[in] listenPort   Port on which to listen for clients
+   * @param[in] logDirectory Directory to store log files in
+   */
+  AdCheckServer(int listenPort,
+                string logDirectory) : m_ListenPort(listenPort),
+                                       m_LogDirectory(logDirectory)
   {
 
   }
@@ -42,12 +56,13 @@ public:
    */
   ~AdCheckServer()
   {
-    // placeholder
     close(m_ListenSocket);
   }
 
   /**
    * Begin listening for incoming connections on a designated port
+   *
+   * @param[in] listenPort The port on which to listen to listen for connections
    */
   int startListening(int listenPort) {
     // Optional library is giving me troubles, will come back to this
@@ -57,6 +72,13 @@ public:
     // }
 
     // Socket will be in the listening state
+    m_ListenPort = listenPort;
+    if ((m_ListenPort < 54000) || (m_ListenPort > 54150))
+    {
+      cout << "Port does not fall within given range of 54000-54150." << endl;
+      return 1;
+    }
+
     m_ListenSocket = createSocket_TCP_Listen(m_ListenPort & 0xFFFF);
     if (m_ListenSocket == 0)
     {
@@ -80,11 +102,8 @@ public:
       else
       {
         cout << "Data received from client!" << endl;
-        // if (__check_request_present__)
-        // {
-        //   string url = __some_regex_magic__;
-        //   read_Website(url.c_str());
-        // }
+
+        int result = processRequest(clientData);
       }
     }
 
@@ -93,12 +112,83 @@ public:
 
 private:
   /**
+   * Process requests in the CHECK format
    *
+   * @param[in] request String data of
+   *
+   * @return 0 on success, 1 on invalid request,
    */
-  int read_Website(char* url) {
+  int processRequest(char* request)
+  {
+    std::string errorHeader = "ERROR: AdCheckServer::processRequest";
 
+    const char* delimeters = " ";
+
+    char *token = strtok(request, delimeters);
+    if (token == nullptr)
+    {
+      cout << errorHeader << " - empty request received." << endl;
+      return 1;
+    }
+
+    // Check request type
+    if (strcmp(token, "CHECK") != 0)
+    {
+      cout << errorHeader << " - invalid request of " << token << " received." << endl;
+      return 1;
+    }
+
+    // Grab url
+    char *url = strtok(request, delimeters);
+    if (url == nullptr)
+    {
+      cout << errorHeader << " - no URL present in CHECK request." << endl;
+      return 1;
+    }
+
+    // Grab regex patter
+    char *raw_pattern = strtok(request, delimeters);
+    if (raw_pattern == nullptr)
+    {
+      cout << errorHeader << " - no regex pattern given in CHECK request." << endl;
+      return 1;
+    }
+    std::regex regex_pattern(raw_pattern);
+
+    // Grab site id
+    char *site_id = strtok(request, delimeters);
+    if (site_id == nullptr)
+    {
+      cout << errorHeader << " - no SiteID was given in CHECK request." << endl;
+      return 1;
+    }
+
+    // Ensure no further arguments were given
+    if (strtok(request, delimeters) != nullptr)
+    {
+      cout << "ERROR: AdCheckServer::processRequest - CHECK request only takes 4 parameters, but more than 4 were received." << endl;
+      return 1;
+    }
+
+    return read_Website(url, regex_pattern, site_id);
+  }
+
+  /**
+   * When a CHECK request is received from a client, process the request
+   *
+   * @param[in] url     URL to check for the received regex pattern
+   * @param[in] pattern Regex pattern to scan site contents for
+   * @param[in] siteID  Site ID used for logging purposes
+   *
+   * @return 0 for pattern not found, 1 for pattern found in site contents
+   */
+  int read_Website(char* url, char* pattern, char* siteID) {
     cout << url << endl;
-    create_Out_Socket(url);
+    int scanSocket = create_Out_Socket(url);
+
+    // @todo: Send a GET request and check for pattern
+
+    close(scanSocket);
     return 0;
   }
 
@@ -115,7 +205,9 @@ private:
   }
 
   /**
+   * Create an outward facing socket to process a client's request
    *
+   * @param[in] address IP address of site to check ads of
    */
   int create_Out_Socket(char * address) {
     int sockfd, numbytes;
@@ -183,15 +275,17 @@ private:
     return 0;
   }
 
-  /**
-   * Port on which the server should listen for requests
-   */
+  // Port on which the server should listen for requests
   int m_ListenPort = 0;
 
-  /**
-   * Socket number on which the server listens
-   */
+  // Socket number on which the server listens
   int m_ListenSocket;
+
+  // Logging directory
+  std::string m_LogDirectory = "server-logs";
+
+  // Format of CHECK requests
+  std::regex checkRequest("CHECK (([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))? ");
 };
 
 /**
@@ -203,11 +297,13 @@ private:
  * "CHECK [URL] [REGEX_PATTERN] [LOG_LOCATION]"
  *  1) Get contents from URL
  *  2) Check if REGEX_PATTERN appears in the URL's web contents
- *  3) If
+ *  3) If pattern appears, log all images on the site
  */
 int main(int argc, char * argv[]) {
+  int listenPort = std::stoi(argv[1]);
+  string logDirectory = static_cast<std::string>(argv[2])
 
-  AdCheckServer server = AdCheckServer();
+  AdCheckServer server = AdCheckServer(listenPort, logDirectory);
   server.startListening(std::stoi(argv[1]));
 
 	// string buffer;
