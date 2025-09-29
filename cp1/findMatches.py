@@ -3,10 +3,15 @@ import re
 import sys
 import os
 from datetime import datetime
+from pathlib import Path
 
 def main(args):
     html = args[0]
     ad_str = args[1]
+    siteID = args[2]
+
+    print(html)
+    print(ad_str)
 
     if re.search(ad_str, html):
         print(html)
@@ -17,10 +22,10 @@ def main(args):
     matches = '\n'.join(matches)
 
     filename = datetime.now().strftime("%y-%M-%d-%H:%m") + ".txt"
-    filepath = f'logs/{siteID}/{filename}'
+    filepath = Path(f'server-logs/{siteID}/{filename}')
 
-    with open(filepath, 'w+') as file:
-        file.write(matches)
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    filepath.write_text(matches)
     print(f"File saved to {filepath}")
 
     return 0

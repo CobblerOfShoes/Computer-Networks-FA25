@@ -126,8 +126,11 @@ public:
       {
         cout << "Data received from client!" << endl;
         int result = processRequest(buffer);
+        break;
       }
     }
+
+
 
     return 0;
   }
@@ -194,6 +197,8 @@ private:
 
     return read_Website(url, regex_pattern, site_id);
   }
+
+  // int sendResponse()
 
   // Port on which the server should listen for requests
   int m_ListenPort = 0;
