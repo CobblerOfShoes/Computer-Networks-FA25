@@ -87,26 +87,44 @@ public:
 
     cout << "Got Here!" << endl;
 
-    char clientData[BUFSIZ] = {0};
     int bytesRead = 0;
     while (true)
     {
       int clientSocket = accept(m_ListenSocket, nullptr, nullptr);
 
-      bytesRead = recv(clientSocket, clientData, sizeof(clientData - 1), 0);
-      if (bytesRead < 0)
+      char buffer[BUFSIZ] = {0};
+
+      while (true)
       {
-        cout << "AdCheckServer::startListening - error upon receiving data from client" << endl;
+        cout << buffer << endl;
+        bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+        if (bytesRead < 0)
+        {
+          cout << "AdCheckServer::startListening - error upon receiving data from client" << endl;
+          break;
+        }
+        else if (bytesRead == 0)
+        {
+          // End of data from client
+          break;
+        }
+        else
+        {
+          buffer[bytesRead] = '\0';
+
+          // Check for a specific termination sequence from the client
+          if (strstr(buffer, "\r\n\r\n") != nullptr)
+          {
+            cout << "Termination sequence received. Stopping read." << endl;
+            break;
+          }
+        }
       }
-      else
+
+      if (buffer[0] != '\0')
       {
         cout << "Data received from client!" << endl;
-
-        int result = processRequest(clientData);
-        if (result == 1) {
-            cerr << "Error: processRequest Failed" << endl;
-            return 1;
-        }
+        int result = processRequest(buffer);
       }
     }
 
@@ -142,7 +160,7 @@ private:
     }
 
     // Grab url
-    char *url = strtok(request, delimeters);
+    char *url = strtok(nullptr, delimeters);
     if (url == nullptr)
     {
       cout << errorHeader << " - no URL present in CHECK request." << endl;
@@ -150,7 +168,7 @@ private:
     }
 
     // Grab regex patter
-    char *raw_pattern = strtok(request, delimeters);
+    char *raw_pattern = strtok(nullptr, delimeters);
     if (raw_pattern == nullptr)
     {
       cout << errorHeader << " - no regex pattern given in CHECK request." << endl;
@@ -159,7 +177,7 @@ private:
     std::regex regex_pattern(raw_pattern);
 
     // Grab site id
-    char *site_id = strtok(request, delimeters);
+    char *site_id = strtok(nullptr, delimeters);
     if (site_id == nullptr)
     {
       cout << errorHeader << " - no SiteID was given in CHECK request." << endl;
@@ -167,7 +185,7 @@ private:
     }
 
     // Ensure no further arguments were given
-    if (strtok(request, delimeters) != nullptr)
+    if (strtok(nullptr, delimeters) != nullptr)
     {
       cout << "ERROR: AdCheckServer::processRequest - CHECK request only takes 4 parameters, but more than 4 were received." << endl;
       return 1;
