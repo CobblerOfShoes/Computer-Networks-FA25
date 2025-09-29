@@ -17,6 +17,7 @@
 #include <optional>
 
 #include "SocketHelper.h"
+#include "server-get-site.h"
 
 using namespace std;
 // Create a function to run a GET command on a URL input, port 80?
@@ -174,7 +175,7 @@ private:
       cout << errorHeader << " - no regex pattern given in CHECK request." << endl;
       return 1;
     }
-    std::regex regex_pattern(raw_pattern);
+    std::string regex_pattern(raw_pattern);
 
     // Grab site id
     char *site_id = strtok(nullptr, delimeters);
@@ -192,108 +193,6 @@ private:
     }
 
     return read_Website(url, regex_pattern, site_id);
-  }
-
-  /**
-   * When a CHECK request is received from a client, process the request
-   *
-   * @param[in] url     URL to check for the received regex pattern
-   * @param[in] pattern Regex pattern to scan site contents for
-   * @param[in] siteID  Site ID used for logging purposes
-   *
-   * @return 0 for pattern not found, 1 for pattern found in site contents
-   */
-  int read_Website(char* url, std::regex pattern, char* siteID) {
-    cout << url << endl;
-    int scanSocket = create_Out_Socket(url);
-
-    // @todo: Send a GET request and check for pattern
-
-    close(scanSocket);
-    return 0;
-  }
-
-  /**
-   *
-   */
-  void* get_in_addr(struct sockaddr* sa)
-  {
-      if (sa->sa_family == AF_INET) {
-          return &(((struct sockaddr_in*)sa)->sin_addr);
-      }
-
-      return &(((struct sockaddr_in6*)sa)->sin6_addr);
-  }
-
-  /**
-   * Create an outward facing socket to process a client's request
-   *
-   * @param[in] address IP address of site to check ads of
-   */
-  int create_Out_Socket(char * address) {
-    int sockfd, numbytes;
-    char buf[MAXDATASIZE];
-    struct addrinfo hints, *servinfo, *p;
-    int rv;
-    char s[INET6_ADDRSTRLEN];
-
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-
-    if ((rv = getaddrinfo(address, PORT, &hints, &servinfo)) != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-        return 1;
-    }
-
-    // loop through all the results and connect to the first we can
-    for(p = servinfo; p != NULL; p = p->ai_next) {
-        if ((sockfd = socket(p->ai_family, p->ai_socktype,
-                p->ai_protocol)) == -1) {
-            perror("client: socket");
-            continue;
-        }
-
-        inet_ntop(p->ai_family,
-            get_in_addr((struct sockaddr *)p->ai_addr),
-            s, sizeof s);
-        printf("client: attempting connection to %s\n", s);
-
-        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-            perror("client: connect");
-            close(sockfd);
-            continue;
-        }
-
-        break;
-    }
-
-    if (p == NULL) {
-        fprintf(stderr, "client: failed to connect\n");
-        return 2;
-    }
-
-    inet_ntop(p->ai_family,
-            get_in_addr((struct sockaddr *)p->ai_addr),
-            s, sizeof s);
-    printf("client: connected to %s\n", s);
-
-    freeaddrinfo(servinfo); // all done with this structure
-
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
-    }
-
-    buf[numbytes] = '\0';
-
-    printf("client: received '%s'\n",buf);
-
-    // @todo: Parse data for regex pattern. Log results
-
-    close(sockfd);
-
-    return 0;
   }
 
   // Port on which the server should listen for requests

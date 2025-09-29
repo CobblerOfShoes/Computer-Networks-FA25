@@ -9,7 +9,16 @@ using namespace std;
 //#define URL "ns-mn1.cse.nd.edu"
 //#define PATH "/cse30264/ads/file1.html"
 
-int read_Website(char * url, string match) {
+/**
+ * When a CHECK request is received from a client, process the request
+ *
+ * @param[in] url     URL to check for the received regex pattern
+ * @param[in] pattern Regex pattern to scan site contents for
+ * @param[in] siteID  Site ID used for logging purposes
+ *
+ * @return 0 for pattern not found, 1 for pattern found in site contents
+ */
+int read_Website(char * url, string match, const char* siteID) {
     char* domain = new char[BUFSIZ];
     char* path = new char[BUFSIZ];
 
@@ -22,10 +31,11 @@ int read_Website(char * url, string match) {
     if (pid == 0) {
         std::vector<const char*> args;
         args.push_back("python3");
-        args.push_back("findMatches.py"); 
-        args.push_back(cOutput); 
-        args.push_back(cMatch); 
-        args.push_back(nullptr); 
+        args.push_back("findMatches.py");
+        args.push_back(cOutput);
+        args.push_back(cMatch);
+        args.push_back(siteID);
+        args.push_back(nullptr);
 
         execvp(args[0], const_cast<char* const*>(args.data()));
     } else if (pid < 0) {
@@ -48,7 +58,7 @@ void *get_in_addr(struct sockaddr *sa)
 }
 
 string create_Out_Socket(char * address, char * directory) {
-    int numbytes;  
+    int numbytes;
     char buf[MAXDATASIZE];
     struct addrinfo hints, *servinfo, *p;
     int rv, sockfd;

@@ -13,16 +13,16 @@ def main(args):
         matches = re.findall(r'<img src=.*>', html)
     else:
         sys.exit(1)
-        
+
     matches = '\n'.join(matches)
-        
+
     filename = datetime.now().strftime("%y-%M-%d-%H:%m") + ".txt"
-    filepath = f'logs/{filename}'
-    
+    filepath = f'logs/{siteID}/{filename}'
+
     with open(filepath, 'w+') as file:
         file.write(matches)
     print(f"File saved to {filepath}")
-        
+
     return 0
 
 if __name__ == '__main__':
