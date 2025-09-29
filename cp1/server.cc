@@ -64,7 +64,7 @@ public:
    *
    * @param[in] listenPort The port on which to listen to listen for connections
    */
-  int startListening(int listenPort) {
+  int startListening(int listenPort = 0) {
     // Optional library is giving me troubles, will come back to this
     // if (listenPort.has_value())
     // {
@@ -72,7 +72,10 @@ public:
     // }
 
     // Socket will be in the listening state
-    m_ListenPort = listenPort;
+    if (listenPort != 0)
+    {
+      m_ListenPort = listenPort;
+    }
     if ((m_ListenPort < 54000) || (m_ListenPort > 54150))
     {
       cout << "Port does not fall within given range of 54000-54150." << endl;
@@ -91,14 +94,14 @@ public:
     int bytesRead = 0;
     while (true)
     {
-      int clientSocket = accept(m_ListenSocket, nullptr, nullptr);
+      m_ClientSocket = accept(m_ListenSocket, nullptr, nullptr);
 
       char buffer[BUFSIZ] = {0};
 
       while (true)
       {
         cout << buffer << endl;
-        bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+        bytesRead = recv(m_ClientSocket, buffer, sizeof(buffer) - 1, 0);
         if (bytesRead < 0)
         {
           cout << "AdCheckServer::startListening - error upon receiving data from client" << endl;
@@ -126,7 +129,6 @@ public:
       {
         cout << "Data received from client!" << endl;
         int result = processRequest(buffer);
-        break;
       }
     }
 
@@ -195,16 +197,65 @@ private:
       return 1;
     }
 
-    return read_Website(url, regex_pattern, site_id);
+    std::pair<int, std::string> result = read_Website(url, regex_pattern, site_id, m_LogDirectory);
+
+    return sendResponse(result.first, result.second, site_id);
   }
 
-  // int sendResponse()
+  void chompNewline(char* str) {
+    if (str == nullptr) {
+        return;
+    }
+
+    size_t len = strlen(str);
+    if (len > 0 && str[len - 1] == '\n') {
+        str[len - 1] = '\0'; // Replace newline with null terminator
+    }
+  }
+
+  int sendResponse(int requestStatus, std::string datetime, char* site_id)
+  {
+    cout << requestStatus << endl;
+
+    // Pattern was found
+    if (requestStatus == 0)
+    {
+      chompNewline(site_id);
+      std::string responseMessage = "200 YES ";
+      responseMessage += site_id;
+      responseMessage += datetime;
+      if (send(m_ClientSocket, responseMessage.data(), responseMessage.length(), 0) < 0)
+      {
+        return 1;
+      }
+    }
+    else if (requestStatus == 1)
+    {
+      std::string responseMessage = "200 NO";
+      if (send(m_ClientSocket, responseMessage.data(), responseMessage.length(), 0) < 0)
+      {
+        return 1;
+      }
+    }
+    else
+    {
+      std::string responseMessage = "400 ERROR";
+      if (send(m_ClientSocket, responseMessage.data(), responseMessage.length(), 0) < 0)
+      {
+        return 1;
+      }
+    }
+
+    return 0;
+  }
 
   // Port on which the server should listen for requests
   int m_ListenPort = 0;
 
   // Socket number on which the server listens
   int m_ListenSocket;
+
+  int m_ClientSocket;
 
   // Logging directory
   std::string m_LogDirectory = "server-logs";

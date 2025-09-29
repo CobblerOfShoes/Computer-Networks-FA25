@@ -2,6 +2,9 @@
 #include "SocketHelper.h"
 #include "server.h"
 
+#include <ctime>
+#include <iomanip>
+
 #include <curl/curl.h>
 
 using namespace std;
@@ -25,9 +28,9 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* use
  * @param[in] pattern Regex pattern to scan site contents for
  * @param[in] siteID  Site ID used for logging purposes
  *
- * @return 0 for pattern not found, 1 for pattern found in site contents
+ * @return 0 for pattern found in site contents, 1 for pattern not found, and 2 for request error
  */
-int read_Website(char * url, string match, const char* siteID) {
+std::pair<int, std::string> read_Website(char * url, std::string match, const char* siteID, std::string logLocation) {
     char* domain = new char[BUFSIZ];
     char* path = new char[BUFSIZ];
 
@@ -39,6 +42,14 @@ int read_Website(char * url, string match, const char* siteID) {
     CURLcode res;
 
     string readBuff;
+
+    std::time_t rawtime;
+    std::time(&rawtime);
+    std::tm* timeinfo = std::localtime(&rawtime);
+
+    std::ostringstream oss;
+    oss << std::put_time(timeinfo, "%Y-%m-%d-%H-%M-%S");
+    std::string formatted_time = oss.str();
 
     curl = curl_easy_init();
     if(curl)
@@ -52,8 +63,11 @@ int read_Website(char * url, string match, const char* siteID) {
       res = curl_easy_perform(curl);
       /* Check for errors */
       if(res != CURLE_OK)
+      {
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
+        return std::make_pair(2, formatted_time);
+      }
 
       /* always cleanup */
       curl_easy_cleanup(curl);
@@ -67,20 +81,27 @@ int read_Website(char * url, string match, const char* siteID) {
         args.push_back("findMatches.py");
         args.push_back(readBuff.c_str());
         args.push_back(cMatch);
+        args.push_back(logLocation.c_str());
         args.push_back(siteID);
+        args.push_back(formatted_time.c_str());
         args.push_back(nullptr);
 
         execvp(args[0], const_cast<char* const*>(args.data()));
     } else if (pid < 0) {
         fprintf(stderr, "ERROR: Fork failed");
-        return -1;
+        return std::make_pair(2, formatted_time);
     } else {
         waitpid(pid, &status, 0);
     }
 
-    cout << "done" << endl;
-
-    return status;
+    if (WIFEXITED(status))
+    {
+      return std::make_pair(int(WEXITSTATUS(status)), formatted_time);
+    }
+    else
+    {
+      return std::make_pair(2, formatted_time);
+    }
 }
 
 void *get_in_addr(struct sockaddr *sa)
