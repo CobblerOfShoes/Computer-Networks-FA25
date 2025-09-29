@@ -103,6 +103,10 @@ public:
         cout << "Data received from client!" << endl;
 
         int result = processRequest(clientData);
+        if (result == 1) {
+            cerr << "Error: processRequest Failed" << endl;
+            return 1;
+        }
       }
     }
 

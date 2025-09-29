@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -Wall
 TARGET = adChecker
-SOURCES = server.cc SocketHelper.cc
+SOURCES = server.cc server-get-site.cc SocketHelper.cc
 OBJECTS = $(SOURCES:.cc=.o)
 
 all: $(TARGET)
