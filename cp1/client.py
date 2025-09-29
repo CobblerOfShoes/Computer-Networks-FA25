@@ -70,7 +70,7 @@ for theTry in range(args.tries):
             print('. Connection successful')
 
          # Construct the string to send
-         theRequest = "CHECK " + args.URL + " " + args.AdID + " " + args.SiteID + "\r\n\r\n"
+         theRequest = "CHECK " + args.URL + " " + args.AdID + " " + args.SiteID
 
          if(args.verbose):
             print('. Sending string |' + theRequest + '|')

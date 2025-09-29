@@ -9,6 +9,7 @@ using namespace std;
 //#define URL "ns-mn1.cse.nd.edu"
 //#define PATH "/cse30264/ads/file1.html"
 
+int read_Website(char * url, string match, char * id) {
 /**
  * When a CHECK request is received from a client, process the request
  *
@@ -23,6 +24,7 @@ int read_Website(char * url, string match, const char* siteID) {
     char* path = new char[BUFSIZ];
 
     sscanf(url, "http://%[^/]/%[^\n]", domain, path);
+    printf("%s\n, %s\n", domain, path);
     string output = create_Out_Socket(domain, path);
     const char* cOutput = output.c_str();
     const char* cMatch = match.c_str();
@@ -31,10 +33,11 @@ int read_Website(char * url, string match, const char* siteID) {
     if (pid == 0) {
         std::vector<const char*> args;
         args.push_back("python3");
-        args.push_back("findMatches.py");
-        args.push_back(cOutput);
-        args.push_back(cMatch);
-        args.push_back(siteID);
+        args.push_back("findMatches.py"); 
+        args.push_back(cOutput); 
+        args.push_back(cMatch); 
+        args.push_back(domain); 
+        args.push_back(id); 
         args.push_back(nullptr);
 
         execvp(args[0], const_cast<char* const*>(args.data()));
