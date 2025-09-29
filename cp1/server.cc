@@ -13,9 +13,17 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <ctime>
+
 #include <sys/types.h>
 #include <optional>
 
+#include <curl/curl.h>
+
+// #include "lib/curlpp/include/curlpp/cURLpp.hpp"
+// // #include "lib/curlpp/include/curlpp/Easy.hpp"
+// #include "lib/curlpp/include/curlpp/Options.hpp"
+// // #include "lib/curlpp/include/curlpp/Exceptions.hpp"
 #include "SocketHelper.h"
 
 using namespace std;
@@ -85,24 +93,44 @@ public:
       return 1;
     }
 
-    cout << "Got Here!" << endl;
-
-    char clientData[BUFSIZ] = {0};
     int bytesRead = 0;
     while (true)
     {
       int clientSocket = accept(m_ListenSocket, nullptr, nullptr);
 
-      bytesRead = recv(clientSocket, clientData, sizeof(clientData - 1), 0);
-      if (bytesRead < 0)
+      char buffer[BUFSIZ] = {0};
+
+      while (true)
       {
-        cout << "AdCheckServer::startListening - error upon receiving data from client" << endl;
+        cout << buffer << endl;
+        bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+        if (bytesRead < 0)
+        {
+          cout << "AdCheckServer::startListening - error upon receiving data from client" << endl;
+          break;
+        }
+        else if (bytesRead == 0)
+        {
+          // End of data from client
+          break;
+        }
+        else
+        {
+          buffer[bytesRead] = '\0';
+
+          // Check for a specific termination sequence from the client
+          if (strstr(buffer, "\r\n\r\n") != nullptr)
+          {
+            cout << "Termination sequence received. Stopping read." << endl;
+            break;
+          }
+        }
       }
-      else
+
+      if (buffer[0] != '\0')
       {
         cout << "Data received from client!" << endl;
-
-        int result = processRequest(clientData);
+        int result = processRequest(buffer);
       }
     }
 
@@ -121,6 +149,8 @@ private:
   {
     std::string errorHeader = "ERROR: AdCheckServer::processRequest";
 
+    cout << request << endl;
+
     const char* delimeters = " ";
 
     char *token = strtok(request, delimeters);
@@ -138,7 +168,7 @@ private:
     }
 
     // Grab url
-    char *url = strtok(request, delimeters);
+    char *url = strtok(nullptr, delimeters);
     if (url == nullptr)
     {
       cout << errorHeader << " - no URL present in CHECK request." << endl;
@@ -146,7 +176,7 @@ private:
     }
 
     // Grab regex patter
-    char *raw_pattern = strtok(request, delimeters);
+    char *raw_pattern = strtok(nullptr, delimeters);
     if (raw_pattern == nullptr)
     {
       cout << errorHeader << " - no regex pattern given in CHECK request." << endl;
@@ -155,7 +185,7 @@ private:
     std::regex regex_pattern(raw_pattern);
 
     // Grab site id
-    char *site_id = strtok(request, delimeters);
+    char *site_id = strtok(nullptr, delimeters);
     if (site_id == nullptr)
     {
       cout << errorHeader << " - no SiteID was given in CHECK request." << endl;
@@ -163,7 +193,8 @@ private:
     }
 
     // Ensure no further arguments were given
-    if (strtok(request, delimeters) != nullptr)
+    token = strtok(nullptr, delimeters);
+    if (token != nullptr)
     {
       cout << "ERROR: AdCheckServer::processRequest - CHECK request only takes 4 parameters, but more than 4 were received." << endl;
       return 1;
@@ -182,14 +213,38 @@ private:
    * @return 0 for pattern not found, 1 for pattern found in site contents
    */
   int read_Website(char* url, std::regex pattern, char* siteID) {
-    cout << url << endl;
     int scanSocket = create_Out_Socket(url);
 
     // @todo: Send a GET request and check for pattern
+    CURL *curl;
+    CURLcode res;
+
+    curl = curl_easy_init();
+    if(curl)
+    {
+      long my_scope_id;
+      curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
+
+      /* Perform the request, res gets the return code */
+      res = curl_easy_perform(curl);
+      /* Check for errors */
+      if(res != CURLE_OK)
+        fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                curl_easy_strerror(res));
+
+      /* always cleanup */
+      curl_easy_cleanup(curl);
+    }
+
+    cout << res << endl;
+
+    bool patternFound = regex_match(curl_easy_strerror(res), pattern);
 
     close(scanSocket);
-    return 0;
+    return ;
   }
+
+  int sendResponse(bool success, bool patternFound = false, int siteID = 0, )
 
   /**
    *
