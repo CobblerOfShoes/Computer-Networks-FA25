@@ -128,10 +128,11 @@ public:
       if (buffer[0] != '\0')
       {
         cout << "Data received from client!" << endl;
-        printf("%s", buffer);
         int result = processRequest(buffer);
       }
     }
+
+
 
     return 0;
   }

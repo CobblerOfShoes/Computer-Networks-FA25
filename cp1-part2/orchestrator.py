@@ -24,22 +24,22 @@ def alert_worker(message, worker):
     print('Connected! Sending Message...')
     data = message.encode('utf-8')
     worker_sock.send(data)
-    
+
     response = worker_sock.recv(2048)
     worker_sock.close()
     if not response:
         print("Socket Connection Broken")
         sys.exit(1)
-    
+
     print(response.decode('utf-8'))
     return response
-    
+
 def add_worker(addr, text):
     if len(WORKERS) <= MAX_WORKERS:
         text = text.split(' ')
         try:
-            WORKERS.append({'hostname': text[1], 
-                            'port': text[2], 
+            WORKERS.append({'hostname': text[1],
+                            'port': text[2],
                             'identifier': text[3],
                             'is_free': True})
         except:
@@ -53,6 +53,7 @@ def main():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('port', type=int, help='The port number for the server')
     parser.add_argument('workers', type=int, help='The number of workers to summon')
+    parser.add_argument('log_location', type=str, help='The location to store log files at')
 
     args = parser.parse_args()
 
@@ -88,8 +89,8 @@ def main():
                 sys.exit(0)
             elif pid < 0:
                 sys.exit(pid)
-                
-        
+
+
 
 if __name__ == '__main__':
     main()
