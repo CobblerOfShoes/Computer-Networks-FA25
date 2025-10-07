@@ -1,2 +1,6 @@
+# Do not include object files
 *.o
+
+# Do not include compiled executables
 a.out
+adChecker
