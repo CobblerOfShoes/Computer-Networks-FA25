@@ -128,11 +128,10 @@ public:
       if (buffer[0] != '\0')
       {
         cout << "Data received from client!" << endl;
+        printf("%s", buffer);
         int result = processRequest(buffer);
       }
     }
-
-
 
     return 0;
   }
@@ -149,7 +148,7 @@ private:
   {
     std::string errorHeader = "ERROR: AdCheckServer::processRequest";
 
-    const char* delimeters = " ";
+    const char* delimeters = " \t\v\r\n";
 
     char *token = strtok(request, delimeters);
     if (token == nullptr)
@@ -220,10 +219,10 @@ private:
     // Pattern was found
     if (requestStatus == 0)
     {
-      chompNewline(site_id);
+      // chompNewline(site_id);
       std::string responseMessage = "200 YES ";
       responseMessage += site_id;
-      responseMessage += datetime;
+      responseMessage += ' ' + datetime;
       if (send(m_ClientSocket, responseMessage.data(), responseMessage.length(), 0) < 0)
       {
         return 1;
