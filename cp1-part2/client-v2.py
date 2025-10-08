@@ -59,15 +59,9 @@ for theTry in range(args.tries):
          print('. Attempting to create the socket')
 
       # Set up the socket (IPv4, TCP)
-      with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+      with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
          if(args.verbose):
-            print('. Socket created - attempting to connect to ' + str(args.server) + ' on port ' + str(args.port))
-
-         # Connect to the server
-         s.connect((args.server, args.port))
-
-         if(args.verbose):
-            print('. Connection successful')
+            print('. Socket created - attempting to send to ' + str(args.server) + ' on port ' + str(args.port))
 
          # Construct the string to send
          theRequest = "CHECK " + args.URL + " " + args.AdID + " " + args.SiteID
@@ -76,17 +70,22 @@ for theTry in range(args.tries):
             print('. Sending string |' + theRequest + '|')
             print('. String is of length ' + str(len(theRequest)))
 
+         client_address = ((args.server, args.port))
          # Send the request
-         s.send(theRequest.encode('utf-8'))
+         s.sendto(theRequest.encode('utf-8'), client_address)
 
          if(args.verbose):
             print('. Send successful')
 
+         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s_in:
 
-         if(args.verbose):
-            print('. Waiting for up to 1024 bytes')
+            if(args.verbose):
+               print('. Waiting for up to 1024 bytes')
 
-         data = s.recv(1024)
+            
+               
+            s_in.bind(client_address)
+            data, addr = s_in.recvfrom(1024)
 
          # Note the completion time
          responseTime = time.time()
