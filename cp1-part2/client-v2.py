@@ -58,12 +58,13 @@ for theTry in range(args.tries):
       if(args.verbose):
          print('. Attempting to create the socket')
 
-      # Set up the socket (IPv4, TCP)
-      with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+      # Set up the socket (IPv4, UDP)
+      with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
          if(args.verbose):
             print('. Socket created - attempting to connect to ' + str(args.server) + ' on port ' + str(args.port))
 
          # Connect to the server
+         # (Does not actually set up a connection, but tells OS where to send and recieve packets from)
          s.connect((args.server, args.port))
 
          if(args.verbose):

@@ -1,3 +1,6 @@
+/*
+** Taken from Beej's network guide for UDP sockets
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +15,77 @@
 #include <sys/wait.h>
 
 #include "SocketHelper.h"
+
+#define MYPORT "4950"    // the port users will be connecting to
+
+#define MAXBUFLEN 100
+
+// get sockaddr, IPv4 or IPv6:
+void *get_in_addr(struct sockaddr *sa)
+{
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
+int createUDPSocket(const char* ipAddress, const char* port)
+{
+    int sockfd;
+    struct addrinfo hints, *servinfo, *p;
+    int rv;
+    int numbytes;
+    struct sockaddr_storage their_addr;
+    char buf[MAXBUFLEN];
+    socklen_t addr_len;
+    char s[INET6_ADDRSTRLEN];
+    int yes=1;
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET6; // set to AF_INET to use IPv4
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = AI_PASSIVE; // use my IP
+
+    if ((rv = getaddrinfo(ipAddress, port, &hints, &servinfo)) != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+        return 1;
+    }
+
+    // loop through all the results and bind to the first we can
+    for(p = servinfo; p != NULL; p = p->ai_next) {
+        if ((sockfd = socket(p->ai_family, p->ai_socktype,
+                p->ai_protocol)) == -1) {
+            perror("listener: socket");
+            continue;
+        }
+
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,
+                sizeof(int)) == -1) {
+            // Since we did get it created, we should close up shop
+            close(sockfd);
+            perror("setsockopt");
+            continue;
+        }
+
+        if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(sockfd);
+            perror("listener: bind");
+            continue;
+        }
+
+        break;
+    }
+
+    if (p == NULL) {
+        fprintf(stderr, "listener: failed to bind socket\n");
+        return 2;
+    }
+
+    freeaddrinfo(servinfo);
+
+    return sockfd;
+}
 
 /* Create a TCP socket that has completed the listen step for initialization
  * on a particular port that listens effectively for any TCP connection to this
