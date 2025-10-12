@@ -3,12 +3,21 @@ import argparse
 import sys
 import time
 import signal
+import os
+import shutil
+from pathlib import Path
 
 workers: list[subprocess.Popen] = []
 
 def signal_handler(sig, frame):
+    # Clean up processes
     for worker in workers:
         worker.terminate()
+
+    # Clean worker states
+    if os.path.exists('./worker_states'):
+       shutil.rmtree('./worker_states')
+
     sys.exit(0)
 
 def main():
@@ -27,6 +36,9 @@ def main():
   if (args.num_workers < 0 or args.num_workers > 5):
     print("Number of desired workers is outside the range 1-5, starting 5 workers...")
     args.num_workers = 5
+
+  status_directory = Path('./worker_states')
+  status_directory.mkdir(exist_ok=True)
 
   for i in range(args.num_workers):
     workerID = f"Worker{i}"

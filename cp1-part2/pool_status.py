@@ -3,7 +3,7 @@ import socket
 
 def main():
   parser = argparse.ArgumentParser(description='')
-  parser.add_argument('ip', type=int, help='The ip address of the server')
+  parser.add_argument('ip', type=str, help='The ip address of the server')
   parser.add_argument('port', type=int, help='The port number for the server')
 
   args = parser.parse_args()

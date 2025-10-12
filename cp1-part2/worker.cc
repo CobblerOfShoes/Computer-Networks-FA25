@@ -188,6 +188,7 @@ private:
       return 1;
     }
     std::string regex_pattern(raw_pattern);
+    m_AdString = regex_pattern;
 
     // Grab site id
     char *site_id = strtok(nullptr, delimeters);
@@ -212,7 +213,7 @@ private:
   int sendResponse(int requestStatus, std::string datetime, char* site_id)
   {
     // Pattern was found
-    std::string responseMessage = "RESPONSE: " + m_WorkerID;
+    std::string responseMessage = "RESPONSE: " + m_WorkerID + " " + m_AdString;
     if (requestStatus == 0)
     {
       responseMessage += " 200 YES ";
@@ -246,6 +247,8 @@ private:
 
   // Worker ID for distinguishing workers
   string m_WorkerID;
+
+  string m_AdString;
 
   // Sockets for communicating with orchestrator
   int m_TCPListenSocket;
