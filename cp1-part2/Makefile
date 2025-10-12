@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -Wall
-LDFLAGS = -lcurl
+LDFLAGS = -lcurl -lpthread
 TARGET = adChecker
 SOURCES = worker.cc worker-get-site.cc SocketHelper.cc
 OBJECTS = $(SOURCES:.cc=.o)

@@ -6,7 +6,6 @@ import logging
 import os
 import subprocess
 import signal
-import json
 
 from datetime import datetime
 
@@ -147,8 +146,6 @@ def main():
 
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('port', type=int, help='The port number for the server')
-    parser.add_argument('workers', type=int, help='The number of workers to summon')
-    parser.add_argument('log_location', type=str, help='The location to store log files at')
 
     args = parser.parse_args()
 
@@ -187,6 +184,10 @@ def main():
         if 'HITS' in text:
             num_hits = text.split()[1]
             send_last_hits(addr, udp_sock, num_hits)
+
+        if 'PING' in text:
+            response = "PONG\r\n\r\n".encode("utf-8")
+            udp_sock.sendto(response, (addr))
 
         # A client has submitted a request
         if 'CHECK' in text:
