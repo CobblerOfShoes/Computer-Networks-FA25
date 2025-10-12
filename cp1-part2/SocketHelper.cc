@@ -13,10 +13,9 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
+#include <iostream>
 
 #include "SocketHelper.h"
-
-#define MYPORT "4950"    // the port users will be connecting to
 
 #define MAXBUFLEN 100
 
@@ -43,7 +42,7 @@ int createUDPSocket(const char* ipAddress, const char* port)
     int yes=1;
 
     memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET6; // set to AF_INET to use IPv4
+    hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE; // use my IP
 

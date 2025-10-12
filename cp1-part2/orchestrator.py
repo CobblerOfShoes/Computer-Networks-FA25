@@ -7,9 +7,15 @@ import math
 import logging
 import os
 import subprocess
+import signal
+
+from launch_workers import launch_workers
 
 MAX_WORKERS = 5
-WORKERS = []
+workers = []
+worker_processes: list[subprocess.Popen] = []
+udp_sock: socket.socket = None
+worker_sockets: list[socket.socket] = []
 
 logging.basicConfig(
     format="[{asctime}] {levelname} - {message}",
@@ -17,17 +23,29 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M",
 )
 
+def signal_handler(sig, frame):
+    for worker in worker_processes:
+        worker.terminate()
+    if (udp_sock is not None):
+        udp_sock.close()
+    for socket in worker_sockets:
+        if socket is not None:
+            socket.close()
+    while True:
+        try:
+            os.wait()
+        except ChildProcessError:
+            # No more child processes
+            break
+    sys.exit(0)
+
 def alert_worker(message, worker):
-    worker_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print(f"Binding to port {worker['port']}")
-    worker['port'] = int(worker['port'])
-    worker_sock.connect((worker['hostname'], worker['port']))
-    print('Connected! Sending Message...')
+    worker_sock = worker['socket']
+
     data = message.encode('utf-8')
     worker_sock.send(data)
 
     response = worker_sock.recv(2048)
-    worker_sock.close()
     if not response:
         print("Socket Connection Broken")
         sys.exit(1)
@@ -36,13 +54,24 @@ def alert_worker(message, worker):
     return response
 
 def add_worker(addr, text):
-    if len(WORKERS) <= MAX_WORKERS:
+    if len(workers) <= MAX_WORKERS:
         text = text.split(' ')
         try:
-            WORKERS.append({'hostname': text[1],
-                            'port': text[2],
-                            'identifier': text[3],
-                            'is_free': True})
+          hostname = text[1]
+          port = text[2]
+          id = text[3]
+          is_free = True
+
+          worker_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          worker_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          print(f"Binding connection to {id} on port {port}")
+          worker_sock.connect((hostname, int(port)))
+
+          workers.append({'hostname': hostname,
+                          'port': port,
+                          'identifier': id,
+                          'is_free': is_free,
+                          'socket': worker_sock})
         except:
             print("ERROR: Incorrect number of arguments")
             return
@@ -51,6 +80,8 @@ def add_worker(addr, text):
         return
 
 def main():
+    signal.signal(signal.SIGINT, signal_handler)
+
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('port', type=int, help='The port number for the server')
     parser.add_argument('workers', type=int, help='The number of workers to summon')
@@ -58,38 +89,68 @@ def main():
 
     args = parser.parse_args()
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    print('Binding to port ' + str(args.port))
+    if args.port < 54000 or args.port > 54150:
+        print("ERROR: Please choose a port between 54000 and 54150")
+        sys.exit(1)
 
-    server_address = ('', args.port)
-    sock.bind(server_address)
-    print('Success!')
+    #### Set up UDP listening socket
+    SOCK = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    print('Binding UDP listener to port ' + str(args.port))
+
+    # Tell the OS we know what we are doing
+    SOCK.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    host_ip = socket.gethostname()
+
+    server_address = ('127.0.0.1', args.port)
+    SOCK.bind(server_address)
+
+    ### Set up the workers
+    WORKER_PROCESSES = launch_workers(args.workers, args.log_location,
+                                      '127.0.0.1', '127.0.0.1', args.port)
+
+    tasks: dict = {}
 
     while True:
-        data, addr = sock.recvfrom(1024)
+        data, addr = SOCK.recvfrom(1024)
         text = data.decode('utf-8')
         print(f"received message: {text}")
+
+        # Worker is contacting Orchestrator for the first time
         if 'REGISTER' in text:
             add_worker(addr, text)
-            print(WORKERS)
 
+        # A client has submitted a request
         if 'CHECK' in text:
-            worker_name = ''
-            for i, worker in enumerate(WORKERS):
+            available_worker = None
+            for i, worker in enumerate(workers):
                 if worker['is_free'] == True:
                     worker['is_free'] = False
-                    worker_name = WORKERS[i]
+                    available_worker = workers[i]
                     break
-            if not worker_name:
-                print("No workers free")
-                continue
+
+            if not available_worker:
+                # Wait for an available worker
+                child_pid, status = os.waitpid(-1, 0)
+                available_worker = tasks[child_pid]
+                available_worker['is_free'] = True
+                del tasks[child_pid]
+
             pid = os.fork()
             if pid == 0:
-                response = alert_worker(text, worker_name)
-                sock.sendto(response, (addr))
+                # We are the child
+                response = alert_worker(text, available_worker).decode("utf-8")
+                words = response.split()
+                response = " ".join(words[2:])
+                SOCK.sendto(response.encode("utf-8"), (addr))
                 sys.exit(0)
             elif pid < 0:
+                # Disaster
                 sys.exit(pid)
+            else:
+                # We are the parent
+                # Track which worker was assigned to which client
+                tasks.update({pid: available_worker})
 
 
 

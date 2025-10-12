@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -Wall
 LDFLAGS = -lcurl
 TARGET = adChecker
-SOURCES = server.cc server-get-site.cc SocketHelper.cc
+SOURCES = worker.cc worker-get-site.cc SocketHelper.cc
 OBJECTS = $(SOURCES:.cc=.o)
 
 all: $(TARGET)

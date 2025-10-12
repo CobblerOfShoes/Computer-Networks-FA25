@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
@@ -14,14 +16,9 @@
 #include <sys/types.h>
 #include <regex>
 
-#define PORT "80"
 #define MAXDATASIZE 1000
-
-std::string create_Out_Socket(char * address, char * directory);
 
 std::pair<int, std::string> read_Website(char * url, std::string match, const char* siteID, std::string logLocation);
 
 void *get_in_addr(struct sockaddr *sa);
-
-std::string create_Out_Socket(char * address);
 

@@ -46,7 +46,14 @@ public:
                                    m_OrchestratorPort(orchestratorPort),
                                    m_WorkerID(workerID)
   {
+    int listenPort = stoi(m_WorkerPort);
+    if ((listenPort < 54000) || (listenPort > 54150))
+    {
+      cout << "Port does not fall within given range of 54000-54150." << endl;
+      exit(1);
+    }
 
+    m_TCPListenSocket = createSocket_TCP_Listen(listenPort & 0xFFFF);
   }
 
   /**
@@ -54,7 +61,8 @@ public:
    */
   ~AdCheckWorker()
   {
-    close(m_OrchestratorTCPSocket);
+    close(m_TCPListenSocket);
+    close(m_OrchestratorSocket);
   }
 
   /**
@@ -64,40 +72,36 @@ public:
   {
     int result = 0;
 
-    int orchestratorUDPSocket = createUDPSocket(m_OrchestratorIP.c_str(),
-                                                m_OrchestratorPort.c_str());
+    int orchestratorUDPSocket = createUDPSocket(m_WorkerIP.c_str(),
+                                                m_WorkerPort.c_str());
 
     string message = "REGISTER " + m_WorkerIP + " " + m_WorkerPort + " " + m_WorkerID;
 
-    result = send(orchestratorUDPSocket, message.c_str(), strlen(message.c_str()), 0);
+    struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(std::stoi(m_OrchestratorPort));
+    server_addr.sin_addr.s_addr = inet_addr(m_OrchestratorIP.c_str());
+
+    result = sendto(orchestratorUDPSocket, message.c_str(), strlen(message.c_str()), 0,
+                    (struct sockaddr*)&server_addr, sizeof(server_addr));
+
+    close(orchestratorUDPSocket);
 
     return result;
   }
 
   /**
    * Begin listening for incoming connections on a designated port
-   *
-   * @param[in] listenPort The port on which to listen to listen for connections
    */
-  int startListening(int listenPort = 0)
+  int startListening()
   {
-    // Socket will be in the listening state
-    if (listenPort == 0)
-    {
-      listenPort = stoi(m_WorkerPort);
-    }
-    if ((listenPort < 54000) || (listenPort > 54150))
-    {
-      cout << "Port does not fall within given range of 54000-54150." << endl;
-      return 1;
-    }
-
-    m_OrchestratorTCPSocket = createSocket_TCP_Listen(stoi(m_WorkerPort) & 0xFFFF);
-    if (m_OrchestratorTCPSocket == 0)
+    if (m_TCPListenSocket == 0)
     {
       perror("AdCheckServer::startListening - failed to create TCP Listen socket.");
       return 1;
     }
+
+    m_OrchestratorSocket = accept(m_TCPListenSocket, nullptr, nullptr);
 
     int bytesRead = 0;
     while (true)
@@ -108,8 +112,7 @@ public:
       // Begin receiving a new request
       while (true)
       {
-        cout << buffer << endl;
-        bytesRead = recv(m_OrchestratorTCPSocket, buffer, sizeof(buffer) - 1, 0);
+        bytesRead = recv(m_OrchestratorSocket, buffer, sizeof(buffer) - 1, 0);
         if (bytesRead < 0)
         {
           cout << "AdCheckServer::startListening - error upon receiving data from client" << endl;
@@ -127,7 +130,6 @@ public:
           // Check for a specific termination sequence from the client
           if (strstr(buffer, "\r\n\r\n") != nullptr)
           {
-            cout << "Termination sequence received. Stopping read." << endl;
             break;
           }
         }
@@ -135,8 +137,6 @@ public:
 
       if (buffer[0] != '\0')
       {
-        cout << "Data received from client!" << endl;
-        printf("%s", buffer);
         int result = processRequest(buffer);
       }
     }
@@ -211,34 +211,26 @@ private:
 
   int sendResponse(int requestStatus, std::string datetime, char* site_id)
   {
-    cout << requestStatus << endl;
-
     // Pattern was found
+    std::string responseMessage = "RESPONSE: " + m_WorkerID;
     if (requestStatus == 0)
     {
-      std::string responseMessage = "200 YES ";
+      responseMessage += " 200 YES ";
       responseMessage += site_id;
       responseMessage += ' ' + datetime;
-      if (send(m_OrchestratorTCPSocket, responseMessage.data(), responseMessage.length(), 0) < 0)
-      {
-        return 1;
-      }
     }
     else if (requestStatus == 1)
     {
-      std::string responseMessage = "200 NO";
-      if (send(m_OrchestratorTCPSocket, responseMessage.data(), responseMessage.length(), 0) < 0)
-      {
-        return 1;
-      }
+      responseMessage += " 200 NO";
     }
     else
     {
-      std::string responseMessage = "400 ERROR";
-      if (send(m_OrchestratorTCPSocket, responseMessage.data(), responseMessage.length(), 0) < 0)
-      {
-        return 1;
-      }
+      responseMessage += " 400 ERROR";
+    }
+
+    if (send(m_OrchestratorSocket, responseMessage.data(), responseMessage.length(), 0) < 0)
+    {
+      return 1;
     }
 
     return 0;
@@ -246,20 +238,21 @@ private:
 
 
   // Port numbers to communicate on
-  string m_WorkerPort = "";
-  string m_OrchestratorPort = "";
+  string m_WorkerPort;
+  string m_OrchestratorPort;
 
-  string m_WorkerIP = "";
-  string m_OrchestratorIP = "";
+  string m_WorkerIP;
+  string m_OrchestratorIP;
 
   // Worker ID for distinguishing workers
-  string m_WorkerID = "";
+  string m_WorkerID;
 
   // Sockets for communicating with orchestrator
-  int m_OrchestratorTCPSocket;
+  int m_TCPListenSocket;
+  int m_OrchestratorSocket;
 
   // Logging directory
-  std::string m_LogDirectory = "server-logs";
+  std::string m_LogDirectory;
 };
 
 /**
