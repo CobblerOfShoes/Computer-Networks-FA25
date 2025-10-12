@@ -1,6 +1,12 @@
 # Do not include object files
 *.o
 
+# Ignore logs
+logs/
+
+# Ignore status data
+worker_states/*
+
 # Do not include compiled executables
 a.out
 adChecker

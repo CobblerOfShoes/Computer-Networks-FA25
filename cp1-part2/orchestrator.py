@@ -9,10 +9,12 @@ import os
 import subprocess
 import signal
 
-from launch_workers import launch_workers
+from datetime import datetime
 
 MAX_WORKERS = 5
-workers = []
+workers: dict[str: dict] = {}
+
+# The following are globals such that the signal handler can do cleanup
 worker_processes: list[subprocess.Popen] = []
 udp_sock: socket.socket = None
 worker_sockets: list[socket.socket] = []
@@ -67,17 +69,20 @@ def add_worker(addr, text):
           print(f"Binding connection to {id} on port {port}")
           worker_sock.connect((hostname, int(port)))
 
-          workers.append({'hostname': hostname,
-                          'port': port,
-                          'identifier': id,
-                          'is_free': is_free,
-                          'socket': worker_sock})
+          workers.update({id: {'hostname': hostname,
+                              'port': port,
+                              'is_free': is_free,
+                              'socket': worker_sock}})
         except:
             print("ERROR: Incorrect number of arguments")
             return
     else:
         print("Error: More than {MAX_WORKERS} workers registered")
         return
+
+def send_status_info(addr):
+    response = str(workers)
+    udp_sock.sendto(response.encode("utf-8"), (addr))
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)
@@ -94,25 +99,21 @@ def main():
         sys.exit(1)
 
     #### Set up UDP listening socket
-    SOCK = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     print('Binding UDP listener to port ' + str(args.port))
 
     # Tell the OS we know what we are doing
-    SOCK.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     host_ip = socket.gethostname()
 
     server_address = ('127.0.0.1', args.port)
-    SOCK.bind(server_address)
-
-    ### Set up the workers
-    WORKER_PROCESSES = launch_workers(args.workers, args.log_location,
-                                      '127.0.0.1', '127.0.0.1', args.port)
+    udp_sock.bind(server_address)
 
     tasks: dict = {}
 
     while True:
-        data, addr = SOCK.recvfrom(1024)
+        data, addr = udp_sock.recvfrom(1024)
         text = data.decode('utf-8')
         print(f"received message: {text}")
 
@@ -120,13 +121,17 @@ def main():
         if 'REGISTER' in text:
             add_worker(addr, text)
 
+        # Send back status info
+        if 'STATUS' in text:
+            send_status_info(addr)
+
         # A client has submitted a request
         if 'CHECK' in text:
             available_worker = None
-            for i, worker in enumerate(workers):
+            for worker in workers.values():
                 if worker['is_free'] == True:
                     worker['is_free'] = False
-                    available_worker = workers[i]
+                    available_worker = worker
                     break
 
             if not available_worker:
@@ -136,13 +141,14 @@ def main():
                 available_worker['is_free'] = True
                 del tasks[child_pid]
 
+            available_worker['last_job_time'] = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
             pid = os.fork()
             if pid == 0:
                 # We are the child
                 response = alert_worker(text, available_worker).decode("utf-8")
                 words = response.split()
                 response = " ".join(words[2:])
-                SOCK.sendto(response.encode("utf-8"), (addr))
+                udp_sock.sendto(response.encode("utf-8"), (addr))
                 sys.exit(0)
             elif pid < 0:
                 # Disaster
