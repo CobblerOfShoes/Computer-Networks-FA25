@@ -190,6 +190,14 @@ def alert_worker(message, hostname, port, nickname):
         print("Socket Connection Broken")
         sys.exit(1)
 
+    worker_state = f"{nickname} {hostname} {port} {starttime} {endtime}"
+
+    with open(f'./worker_states/{nickname}', 'w') as f:
+        f.write(worker_state)
+
+    words = response.decode("utf-8").split()
+    update_latest_hits(nickname, words[5], words[2], endtime)
+
     print(response.decode('utf-8'))
     return response
 
@@ -213,7 +221,8 @@ def resp_process(udp_sock: socket.socket):
             response, addr = data
             print(f"Connecting to {addr}")
             print(f'Responding |{response.decode("utf-8")}| to {addr}')
-            udp_sock.sendto(response, (addr))
+            response = " ".join(response.decode("utf-8").split()[3:])
+            udp_sock.sendto(response.encode("utf-8"), (addr))
             resp_queue.task_done()
             print("Done!")
 

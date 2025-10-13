@@ -11,7 +11,7 @@ def main():
   with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
     s.connect((args.ip, int(args.port)))
 
-    theRequest = "STATUS\r\n\r\n"
+    theRequest = "STATUS \r\n\r\n"
 
     s.send(theRequest.encode("utf-8"))
 
