@@ -52,6 +52,10 @@ def main():
   # Do nothing until the program is killed, allows for cleanup of workers
   while True:
      time.sleep(10)
+     for worker in workers:
+        if worker.poll() is not None:
+            print("A worker has died. Shutting down. Please reinvoke script")
+            signal.raise_signal(signal.SIGINT)
 
 if __name__ == "__main__":
   main()

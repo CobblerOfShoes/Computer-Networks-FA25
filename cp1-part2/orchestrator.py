@@ -59,6 +59,7 @@ def main():
     if args.verbose:
         print('Success!')
 
+    # Thread for sending results to clients
     t = Thread(target=resp_process, args=[udp_sock])
     threads.append(t)
     t.start()
@@ -68,6 +69,8 @@ def main():
             text = data.decode('utf-8').split(' ')
             if args.verbose:
                 print(f"received message: {text}")
+
+            # Tracks worker registration
             if 'REGISTER' in text:
                 print("AH")
                 t = Thread(target=worker_process, args=text[1:])
@@ -76,8 +79,7 @@ def main():
                 if args.verbose:
                     print(text[1:])
 
-                # Send back status info
-
+            # Send back status info
             if 'STATUS' in text:
                 send_status_info(addr, udp_sock)
 
@@ -86,7 +88,9 @@ def main():
                 num_hits = text.split()[1]
                 send_last_hits(addr, udp_sock, num_hits)
 
+            # Respond to heartbeat
             if 'PING' in text:
+                print("Received heartbeat")
                 response = "PONG\r\n\r\n".encode("utf-8")
                 udp_sock.sendto(response, (addr))
 
@@ -200,8 +204,6 @@ def worker_process(hostname, port, nickname):
             work_queue.task_done()
 
 def resp_process(udp_sock: socket.socket):
-    # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_sock:
-    #     udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     with udp_sock:
         while True:
             try:

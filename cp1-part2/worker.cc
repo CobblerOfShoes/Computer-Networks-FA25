@@ -14,16 +14,13 @@
 #include <netdb.h>
 
 #include <sys/types.h>
-#include <optional>
+#include <thread>
+#include <pthread.h>
 
 #include "SocketHelper.h"
 #include "worker-get-site.h"
 
 using namespace std;
-// Create a function to run a GET command on a URL input, port 80?
-#define PORT "80"
-#define MAXDATASIZE 100
-#define URL "ns-mn1.cse.nd.edu/cse30264/ads/file1.html"
 
 class AdCheckWorker
 {
@@ -65,6 +62,40 @@ public:
     close(m_OrchestratorSocket);
   }
 
+  /** A threaded function that checks if the orchestrator is still alive */
+  void heartbeat(int orchestratorSocket, struct sockaddr_in server_addr)
+  {
+    std::string message = "PING \r\n\r\n";
+    char buffer[1024];
+    bool orchestratorAlive = true;
+    socklen_t addr_len = sizeof(server_addr);
+
+    // Set a timeout
+    struct timeval tv;
+    tv.tv_sec = 10;
+    tv.tv_usec = 0;
+    setsockopt(orchestratorSocket, SOL_SOCKET, SO_RCVTIMEO,
+               (const char *)&tv, sizeof(tv));
+
+    while (orchestratorAlive)
+    {
+      std::this_thread::sleep_for(std::chrono::seconds(5));
+
+      sendto(orchestratorSocket, message.c_str(), strlen(message.c_str()), 0,
+              (struct sockaddr*)&server_addr, sizeof(server_addr));
+
+      int result = recvfrom(orchestratorSocket, buffer, sizeof(buffer)-1, 0,
+                            (struct sockaddr*)&server_addr, &addr_len);
+      if (result < 0)
+      {
+        orchestratorAlive = false;
+      }
+    }
+
+    close(orchestratorSocket);
+    exit(1);
+  }
+
   /**
    * Send a UDP message to the orchestrator to register
    */
@@ -85,7 +116,8 @@ public:
     result = sendto(orchestratorUDPSocket, message.c_str(), strlen(message.c_str()), 0,
                     (struct sockaddr*)&server_addr, sizeof(server_addr));
 
-    close(orchestratorUDPSocket);
+    std::thread t1(&AdCheckWorker::heartbeat, this, orchestratorUDPSocket, server_addr);
+    t1.detach();
 
     return result;
   }
