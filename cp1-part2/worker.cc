@@ -77,6 +77,7 @@ public:
     setsockopt(orchestratorSocket, SOL_SOCKET, SO_RCVTIMEO,
                (const char *)&tv, sizeof(tv));
 
+    // Send heartbeat messages
     while (orchestratorAlive)
     {
       std::this_thread::sleep_for(std::chrono::seconds(5));

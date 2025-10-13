@@ -35,7 +35,6 @@ def main():
 
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('port', type=int, help='The port number for the server')
-    parser.add_argument('workers', type=int, help='The number of workers to summon')
     parser.add_argument('--verbose', help='Enable verbose output', action="store_true")
 
     args = parser.parse_args()
@@ -217,7 +216,7 @@ def resp_process(udp_sock: socket.socket):
             udp_sock.sendto(response, (addr))
             resp_queue.task_done()
             print("Done!")
-            
+
 
 if __name__ == '__main__':
     main()

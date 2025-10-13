@@ -39,9 +39,23 @@
 Note:
   From our understanding, the orchestrator is not supposed to call the launch_workers.py script. However, it would be fairly easy to copy the arguments of launch_workers.py to orchestrator.py and have the orchestrator call the script.
 
+Recommended function calls:
+  terminal 1:
+    python3 orchestrator.py 54133 --verbose
+  terminal 2:
+    python3 launch_workers.py 127.0.0.1 54133 127.0.0.1 54134 [1-5] logs
+  terminal 3:
+    `desired script`
+    example: python3 client-v2.py http://ns-mn1.cse.nd.edu/cse30264/ads/file1.html IRISH_CSE S1 test --port=54133
+
 # Bonus Features
 
 - Alex:
-  - Heartbeat to have the launch workers script poll children and have the children poll the orchestrator
+  - Heartbeat to have the launch workers script poll children and have the children poll the orchestrator.
+  - The workers will passively send a UDP 'PING' message every 5 seconds, and the server will respond with 'PONG' (the workers really just want any message back).
+  - If a message is not received in 10 seconds, then the worker will tear itself down. The launch workers script will observe this and then tear itself down in turn.
+  - The delays could be increased, but I didn't want me or you to have to wait 1 minute each time to see the effects.
 - Tim:
   - Password Protection: User must input a password to access previously seen AdID's
+  - In the logs/usedIDs file, there is data in the format [AD_STRING, password]
+  - For any request with a given ad string, the request must also present the proper password
