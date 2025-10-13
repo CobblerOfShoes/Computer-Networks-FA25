@@ -41,7 +41,7 @@ Note:
 
 # Bonus Features
 
-Alex:
-  Heartbeat to have the launch workers script poll children and have the children poll the orchestrator
-Tim:
-  Password Protection: User must input a password to access previously seen AdID's
+- Alex:
+  - Heartbeat to have the launch workers script poll children and have the children poll the orchestrator
+- Tim:
+  - Password Protection: User must input a password to access previously seen AdID's
