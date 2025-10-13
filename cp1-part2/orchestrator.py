@@ -41,6 +41,7 @@ def main():
     args = parser.parse_args()
 
     if args.verbose:
+        print("PASSWORDS:")
         print(password_dict)
 
     if args.port < 54000 or args.port > 54150:
@@ -104,10 +105,12 @@ def main():
                     work_queue.put((data.decode('utf-8'), addr))
                 elif ad_id in password_dict and password_dict[ad_id] != password:
                     print("Incorrect password for AdID")
-                    resp_queue.put(("ERROR: Incorrect password for AdID " + ad_id).encode('utf-8'), addr)
+                    resp_queue.put((("ERROR: Incorrect password for AdID " + ad_id).encode('utf-8'), addr))
+                    print(resp_queue.qsize())
                 else:
                     print('Found password')
                     work_queue.put((data.decode('utf-8'), addr))
+
         except Exception as e:
             print("CUSTOM EXCEPTION")
             if args.verbose:
@@ -190,7 +193,6 @@ def alert_worker(message, hostname, port, nickname):
 def worker_process(hostname, port, nickname):
     while True:
         try:
-            print("HERE")
             message = work_queue.get()
             response = alert_worker(message, hostname, port, nickname)
             resp_queue.put((response, message[1]))
@@ -203,14 +205,17 @@ def resp_process(udp_sock: socket.socket):
     with udp_sock:
         while True:
             try:
-                response, addr = resp_queue.get()
-                print(f"Connecting to {addr}")
-                print(f'Responding |{response.decode("utf-8")}| to {addr}')
-                udp_sock.sendto(response, (addr))
-                resp_queue.task_done()
-                print("Done!")
+                data = resp_queue.get()
             except ValueError:
                 continue
+            print(data)
+            response, addr = data
+            print(f"Connecting to {addr}")
+            print(f'Responding |{response.decode("utf-8")}| to {addr}')
+            udp_sock.sendto(response, (addr))
+            resp_queue.task_done()
+            print("Done!")
+            
 
 if __name__ == '__main__':
     main()
