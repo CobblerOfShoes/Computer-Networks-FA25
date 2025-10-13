@@ -26,7 +26,7 @@ password_dict = {}
 #     sys.exit(1)
 
 def main():
-    with open('./logs/usedIDs', 'w+') as f:
+    with open('./logs/usedIDs', 'r') as f:
         for line in f.readlines():
             data = line.strip().split(' ')
             password_dict[data[0]] = data[1] #Format: AdID Password
@@ -39,6 +39,9 @@ def main():
     parser.add_argument('--verbose', help='Enable verbose output', action="store_true")
 
     args = parser.parse_args()
+    
+    if args.verbose:
+        print(password_dict)
     
     if args.port < 54000 or args.port > 54150:
         print("ERROR: Please choose a port between 54000 and 54150")
