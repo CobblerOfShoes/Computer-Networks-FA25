@@ -17,6 +17,7 @@ threads = []
 work_queue = queue.Queue()
 resp_queue = queue.Queue()
 lock = Lock()
+password_dict = {}
 
 # def signal_handler(sig, frame):
 #     print("SIGNAL HANDLER")
@@ -25,6 +26,11 @@ lock = Lock()
 #     sys.exit(1)
 
 def main():
+    with open('./logs/usedIDs', 'w+') as f:
+        for line in f.readlines():
+            data = line.strip().split(' ')
+            password_dict[data[0]] = data[1] #Format: AdID Password
+    
     # signal.signal(signal.SIGINT, signal_handler)
     
     parser = argparse.ArgumentParser(description='')
@@ -52,7 +58,6 @@ def main():
     t = Thread(target=resp_process)
     threads.append(t)
     t.start()
-
     while True:
         try:
             data, addr = udp_sock.recvfrom(1024)
@@ -77,14 +82,29 @@ def main():
                 send_last_hits(addr, udp_sock, num_hits)
 
             if 'CHECK' in text:
-                work_queue.put((data.decode('utf-8'), addr))
+                print(text)
+                ad_id = text[2]
+                password = text[4][:-5]
+                #print(f'PASSWORD-FREE STRING: {text[:-1] + [text[-1][-4:]]}')
+                data=' '.join(text[:-1] + [text[-1][-4:]]).encode('utf-8')
+                if ad_id not in password_dict:
+                    print("AdID not registered, adding")
+                    with open('./logs/usedIDs', 'a+') as f2:
+                        save_str = ad_id + ' ' + password
+                        f2.write(save_str + '\n')
+                    password_dict[ad_id] = password
+                    work_queue.put((data.decode('utf-8'), addr))
+                elif ad_id in password_dict and password_dict[ad_id] != password:
+                    print("Incorrect password for AdID")
+                    resp_queue.put(("ERROR: Incorrect password for AdID " + ad_id).encode('utf-8'), addr)
+                else:
+                    print('Found password')
+                    work_queue.put((data.decode('utf-8'), addr))
         except Exception as e:
             print("CUSTOM EXCEPTION")
-            for t in threads:
-                t.join()
             if args.verbose: 
                 print(f'Exception: {e}', file=sys.stderr)
-            sys.exit(1)
+            raise(e)
 
 def update_latest_hits(worker_id, site_id, ad_string, time):
     lines = []
@@ -148,6 +168,7 @@ def alert_worker(message, hostname, port, nickname):
     print('Connected! Sending Message...')
     data = message[0].encode('utf-8')
     worker_sock.send(data)
+    print("Request Sent, waiting for response...")
     response = worker_sock.recv(2048)
     endtime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
     worker_sock.close()
@@ -168,14 +189,19 @@ def worker_process(hostname, port, nickname):
             work_queue.task_done()
 
 def resp_process():
-    udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    while True:
-        try:
-            response, addr = resp_queue.get()
-            print(f'Responding {response.decode("utf-8")} to {addr}')
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_sock:
+        udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        while True:
+            try:
+                response, addr = resp_queue.get()
+            except ValueError:
+                continue
+            print(f"Connecting to {addr}")
+            udp_sock.connect(addr)
+            print(f'Responding |{response.decode("utf-8")}| to {addr}')
             udp_sock.sendto(response, (addr))
-        finally:
             resp_queue.task_done()
+            print("Done!")
 
 if __name__ == '__main__':
     main()

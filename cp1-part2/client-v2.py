@@ -23,8 +23,7 @@ parsedArgs = argparse.ArgumentParser(description='Python client for confirming a
 parsedArgs.add_argument('URL', type=str, help='The URL to access', default='none')
 parsedArgs.add_argument('AdID', type=str, help='The search string for our ads', default='none')
 parsedArgs.add_argument('SiteID', type=str, help='The site ID to use for logging', default='XXX')
-parsedArgs.add_argument('SERVIP', type=str, help='The server IP to send requests', default='54105')
-parsedArgs.add_argument('SERVPORT', type=str, help='The client port for receiving messages', default='54105')
+parsedArgs.add_argument('PASSWORD', type=str, help='The password to access previously requested AdIDs', default='XXX')
 parsedArgs.add_argument('--port', type=int, help='Port for the server', default=54000)
 parsedArgs.add_argument('--server', type=str, help='Hostname or IP address of server', default='127.0.0.1')
 parsedArgs.add_argument('--tries', type=int, help='Number of times to check the site', default=1)
@@ -73,7 +72,7 @@ for theTry in range(args.tries):
             print('. Connection successful')
 
          # Construct the string to send
-         theRequest = "CHECK " + args.URL + " " + args.AdID + " " + args.SiteID + '\r\n\r\n'
+         theRequest = "CHECK " + args.URL + " " + args.AdID + " " + args.SiteID + " " + args.PASSWORD + "'\r\n\r\n"
 
          if(args.verbose):
             print('. Sending string |' + theRequest + '|')
@@ -84,12 +83,9 @@ for theTry in range(args.tries):
 
          if(args.verbose):
             print('. Send successful')
-
-
-         if(args.verbose):
-            print('. Waiting for up to 1024 bytes')
             
-         s.bind((PORT))
+         if(args.verbose):
+            print(f'. Waiting for up to 1024 bytes on port {s.getsockname()}')
 
          data, addr = s.recvfrom(1024)
 
