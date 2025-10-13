@@ -30,19 +30,19 @@ def main():
         for line in f.readlines():
             data = line.strip().split(' ')
             password_dict[data[0]] = data[1] #Format: AdID Password
-    
+
     # signal.signal(signal.SIGINT, signal_handler)
-    
+
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('port', type=int, help='The port number for the server')
     parser.add_argument('workers', type=int, help='The number of workers to summon')
     parser.add_argument('--verbose', help='Enable verbose output', action="store_true")
 
     args = parser.parse_args()
-    
+
     if args.verbose:
         print(password_dict)
-    
+
     if args.port < 54000 or args.port > 54150:
         print("ERROR: Please choose a port between 54000 and 54150")
         sys.exit(1)
@@ -50,30 +50,31 @@ def main():
     udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     if args.verbose:
         print('Binding to port ' + str(args.port))
-        
+
     udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     server_address = ('', args.port)
     udp_sock.bind(server_address)
-    if args.verbose: 
+    if args.verbose:
         print('Success!')
 
-    t = Thread(target=resp_process)
+    t = Thread(target=resp_process, args=[udp_sock])
     threads.append(t)
     t.start()
     while True:
         try:
             data, addr = udp_sock.recvfrom(1024)
             text = data.decode('utf-8').split(' ')
-            if args.verbose: 
+            if args.verbose:
                 print(f"received message: {text}")
             if 'REGISTER' in text:
+                print("AH")
                 t = Thread(target=worker_process, args=text[1:])
                 threads.append(t)
                 t.start()
-                if args.verbose: 
+                if args.verbose:
                     print(text[1:])
-                    
+
                 # Send back status info
 
             if 'STATUS' in text:
@@ -83,6 +84,10 @@ def main():
             if 'HITS' in text:
                 num_hits = text.split()[1]
                 send_last_hits(addr, udp_sock, num_hits)
+
+            if 'PING' in text:
+                response = "PONG\r\n\r\n".encode("utf-8")
+                udp_sock.sendto(response, (addr))
 
             if 'CHECK' in text:
                 print(text)
@@ -105,7 +110,7 @@ def main():
                     work_queue.put((data.decode('utf-8'), addr))
         except Exception as e:
             print("CUSTOM EXCEPTION")
-            if args.verbose: 
+            if args.verbose:
                 print(f'Exception: {e}', file=sys.stderr)
             raise(e)
 
@@ -178,33 +183,34 @@ def alert_worker(message, hostname, port, nickname):
     if not response:
         print("Socket Connection Broken")
         sys.exit(1)
-    
+
     print(response.decode('utf-8'))
     return response
 
 def worker_process(hostname, port, nickname):
     while True:
         try:
-            message = work_queue.get() 
+            print("HERE")
+            message = work_queue.get()
             response = alert_worker(message, hostname, port, nickname)
             resp_queue.put((response, message[1]))
         finally:
             work_queue.task_done()
 
-def resp_process():
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_sock:
-        udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+def resp_process(udp_sock: socket.socket):
+    # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_sock:
+    #     udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    with udp_sock:
         while True:
             try:
                 response, addr = resp_queue.get()
+                print(f"Connecting to {addr}")
+                print(f'Responding |{response.decode("utf-8")}| to {addr}')
+                udp_sock.sendto(response, (addr))
+                resp_queue.task_done()
+                print("Done!")
             except ValueError:
                 continue
-            print(f"Connecting to {addr}")
-            udp_sock.connect(addr)
-            print(f'Responding |{response.decode("utf-8")}| to {addr}')
-            udp_sock.sendto(response, (addr))
-            resp_queue.task_done()
-            print("Done!")
 
 if __name__ == '__main__':
     main()

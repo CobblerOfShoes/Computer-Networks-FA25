@@ -83,7 +83,7 @@ for theTry in range(args.tries):
 
          if(args.verbose):
             print('. Send successful')
-            
+
          if(args.verbose):
             print(f'. Waiting for up to 1024 bytes on port {s.getsockname()}')
 
