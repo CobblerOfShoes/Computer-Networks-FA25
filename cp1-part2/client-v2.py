@@ -23,6 +23,8 @@ parsedArgs = argparse.ArgumentParser(description='Python client for confirming a
 parsedArgs.add_argument('URL', type=str, help='The URL to access', default='none')
 parsedArgs.add_argument('AdID', type=str, help='The search string for our ads', default='none')
 parsedArgs.add_argument('SiteID', type=str, help='The site ID to use for logging', default='XXX')
+parsedArgs.add_argument('SERVIP', type=str, help='The server IP to send requests', default='54105')
+parsedArgs.add_argument('SERVPORT', type=str, help='The client port for receiving messages', default='54105')
 parsedArgs.add_argument('--port', type=int, help='Port for the server', default=54000)
 parsedArgs.add_argument('--server', type=str, help='Hostname or IP address of server', default='127.0.0.1')
 parsedArgs.add_argument('--tries', type=int, help='Number of times to check the site', default=1)
@@ -58,19 +60,20 @@ for theTry in range(args.tries):
       if(args.verbose):
          print('. Attempting to create the socket')
 
-      # Set up the socket (IPv4, TCP)
-      with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+      # Set up the socket (IPv4, UDP)
+      with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
          if(args.verbose):
             print('. Socket created - attempting to connect to ' + str(args.server) + ' on port ' + str(args.port))
 
          # Connect to the server
+         # (Does not actually set up a connection, but tells OS where to send and recieve packets from)
          s.connect((args.server, args.port))
 
          if(args.verbose):
             print('. Connection successful')
 
          # Construct the string to send
-         theRequest = "CHECK " + args.URL + " " + args.AdID + " " + args.SiteID
+         theRequest = "CHECK " + args.URL + " " + args.AdID + " " + args.SiteID + '\r\n\r\n'
 
          if(args.verbose):
             print('. Sending string |' + theRequest + '|')
@@ -85,8 +88,10 @@ for theTry in range(args.tries):
 
          if(args.verbose):
             print('. Waiting for up to 1024 bytes')
+            
+         s.bind((PORT))
 
-         data = s.recv(1024)
+         data, addr = s.recvfrom(1024)
 
          # Note the completion time
          responseTime = time.time()

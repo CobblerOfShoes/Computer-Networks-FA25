@@ -1,48 +1,48 @@
 #!/usr/bin/python3
 import re
 import sys
-import os
-from datetime import datetime
 import requests
+import os
+from pathlib import Path
+from urllib.parse import urlparse
+
+BUFSIZ = 8192
 
 def main(args):
     html = args[0]
     ad_str = args[1]
-    domain = args[2]
-    id = args[3]
+    log_location = args[2]
+    siteID = args[3]
+    time = args[4]
 
+    image_urls = []
     if re.search(ad_str, html):
-        print(html)
-        matches = re.findall(r'<img src=.*>', html)
+        # print(html)
+        matches = re.findall(r'<img.*src="(.*)".*/>', html)
+        image_urls.extend(list(matches))
     else:
         sys.exit(1)
-        
-    img_urls = []
-    for match in matches:
-        start = match.find('"')
-        end = match.find('"', start + 1)
-        img_urls.append(match[start+1:end])
-        
-    filename = datetime.now().strftime("%y-%M-%d-%H:%M:%S")
-    filepath = f'logs/{id}/{filename}'
-    
-    try:
-        os.makedirs(filepath)
-    except:
-        pass
-    
-    for img in img_urls:
-        start = 0
-        img_name = img[::-1]
-        start = img_name.find("/")
-        img_name = img_name[:start]
-        img_name = img_name[::-1]
-        res = requests.get(img)
-        
-        with open(filepath + '/' + img_name, 'bw') as image:
-            for chunk in res.iter_content(chunk_size=8192):
-                image.write(chunk)
-    
+
+    directory = f'{log_location}/{siteID}/{time}'
+
+    for url in image_urls:
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+
+            parsed_url = urlparse(url)
+            path = parsed_url.path
+            image_name = os.path.basename(os.path.normpath(path))
+            filepath = Path(f'{directory}/{image_name}')
+            filepath.parent.mkdir(parents=True, exist_ok=True)
+
+            with filepath.open('wb') as file:
+                for chunk in response.iter_content(chunk_size=BUFSIZ):
+                    file.write(chunk)
+            print(f"Image \"{image_name}\" saved to: {directory}")
+        except requests.exceptions.RequestException:
+            print(f"Could not download image from {url}")
+
     return 0
 
 if __name__ == '__main__':
