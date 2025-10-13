@@ -84,7 +84,7 @@ def main():
 
             # Send back last nth hits
             if 'HITS' in text:
-                num_hits = text.split()[1]
+                num_hits = text[1]
                 send_last_hits(addr, udp_sock, num_hits)
 
             # Respond to heartbeat
