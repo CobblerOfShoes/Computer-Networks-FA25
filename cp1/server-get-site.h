@@ -19,7 +19,7 @@
 
 std::string create_Out_Socket(char * address, char * directory);
 
-int read_Website(char * url, std::string match);
+int read_Website(char * url, std::string match, char * id);
 
 void *get_in_addr(struct sockaddr *sa);
 

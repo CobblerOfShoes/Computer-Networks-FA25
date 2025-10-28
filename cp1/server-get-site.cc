@@ -19,7 +19,7 @@ int read_Website(char * url, string match, char * id) {
  *
  * @return 0 for pattern not found, 1 for pattern found in site contents
  */
-int read_Website(char * url, string match, const char* siteID) {
+// int read_Website(char * url, string match, const char* siteID) {
     char* domain = new char[BUFSIZ];
     char* path = new char[BUFSIZ];
 
@@ -33,11 +33,11 @@ int read_Website(char * url, string match, const char* siteID) {
     if (pid == 0) {
         std::vector<const char*> args;
         args.push_back("python3");
-        args.push_back("findMatches.py"); 
-        args.push_back(cOutput); 
-        args.push_back(cMatch); 
-        args.push_back(domain); 
-        args.push_back(id); 
+        args.push_back("findMatches.py");
+        args.push_back(cOutput);
+        args.push_back(cMatch);
+        args.push_back(domain);
+        args.push_back(id);
         args.push_back(nullptr);
 
         execvp(args[0], const_cast<char* const*>(args.data()));
