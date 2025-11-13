@@ -3,10 +3,21 @@
 
 # Ignore logs
 logs/
+server-logs/
 
 # Ignore status data
 worker_states/*
 
 # Do not include compiled executables
 a.out
-adChecker
+cp1/adChecker
+cp1-part2/adChecker
+
+# Ignore cp2 venv
+cp2/cp2_env
+
+# Ignore pycache
+__pycache__/
+
+# Ignore vscode files
+.vscode/
