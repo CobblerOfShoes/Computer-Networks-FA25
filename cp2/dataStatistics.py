@@ -5,13 +5,10 @@ from segmentJson import filterData
 #  YEAR_MONTH_DAY MEAN_TPUT mbps
 #  Example: 2024-06-02 12.123 mbps
 def dailyMeans(dataset):
-  filteredData = list(filter(lambda entry: filterData(entry, 0, 0, 0,
-                                                      'any', 'downlink'), dataset))
-
-  days: set = {entry['timestamp'][0:10] for entry in filteredData}
+  days: set = {entry['timestamp'][0:10] for entry in dataset}
   daily_means = []
   for day in days:
-    tputs = [ float(entry['median_tput_mbps']) for entry in filteredData if entry['timestamp'].startswith(day) ]
+    tputs = [ float(entry['median_tput_mbps']) for entry in dataset if entry['timestamp'].startswith(day) ]
     mean_tput = sum(tputs) / len(tputs)
     daily_means.append( day + ' ' + str(mean_tput) + ' mbps')
 
@@ -22,13 +19,10 @@ def dailyMeans(dataset):
 #  YEAR_MONTH_DAY MAX_TPUT mbps
 #  Example: 2024-06-02 100.456 mbps
 def dailyPeaks(dataset):
-  filteredData = list(filter(lambda entry: filterData(entry, 0, 0, 0,
-                                                      'any', 'downlink'), dataset))
-
-  days: set = {entry['timestamp'][0:10] for entry in filteredData}
+  days: set = {entry['timestamp'][0:10] for entry in dataset}
   daily_peaks = []
   for day in days:
-    tputs = [ float(entry['max_tput_mbps']) for entry in filteredData if entry['timestamp'].startswith(day) ]
+    tputs = [ float(entry['max_tput_mbps']) for entry in dataset if entry['timestamp'].startswith(day) ]
     max_tput = max(tputs)
     daily_peaks.append( day + ' ' + str(max_tput) + ' mbps')
 

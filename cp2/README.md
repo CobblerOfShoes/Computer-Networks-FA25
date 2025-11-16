@@ -13,25 +13,18 @@ To begin, please start by creating a virtual environment with the following step
 
 ### For the packet capture:
 `python3 requestTimer.py --ip <ip> --port <port>`
+- Note that our server is currently configured to run on port 54011
 
 ### Results
 Inside the "results" folder:
 - cmd/: output of requestTimer.py
-- wireshark/: Wireshark packet captures
-
-please run this code from the cp2 directory to decompress the packet captures:
-```
-cd results/
-tar -xzvf wireshark_captures.tar.gz
-```
-
-Output 1 was run with good wifi and output 2 with poor wifi
+- info.md: Information about each capture
 
 # 3 -- Contributions
 
 ## Alex
 
-Creation of the Flask server
+Creation of the Flask server and data filtering
 
 ## Tim
 
