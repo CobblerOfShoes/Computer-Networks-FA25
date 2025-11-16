@@ -3,12 +3,12 @@ import time
 import argparse
 
 parser = argparse.ArgumentParser(description='Measure request times to specified endpoints.')
-parser.add_argument('--IP', type=str, default='localhost', help='Base URL of the server')
-parser.add_argument('--port', type=int, default=5000, help='Port number of the server')
+parser.add_argument('--ip', type=str, default='localhost', help='Base URL of the server')
+parser.add_argument('--port', type=int, default=54011, help='Port number of the server')
 parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
 
 args = parser.parse_args()
-URL = f"http://{args.IP}:{args.port}"
+URL = f"http://{args.ip}:{args.port}"
 
 def time_request(url):
     if args.verbose:
@@ -34,7 +34,9 @@ def endpoint_statistics(url):
     return average_time, min(timings), max(timings), median_time, stdev_time
 
 if __name__ == "__main__":
-    endpoints = ['/data', '/dl/stat/mean', '/dl/stat/peak']
+    endpoints = ['/data',
+                 '/dl/stat/mean?y=2024&m=5&if=wlan0&dir=downlink',
+                 '/dl/stat/peak?y=2024&m=5&if=wlan0&dir=downlink']
     for endpoint in endpoints:
         url = URL + endpoint
         avg, min_time, max_time, median, stdev = endpoint_statistics(url)
