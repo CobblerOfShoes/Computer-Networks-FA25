@@ -17,15 +17,7 @@ To begin, please start by creating a virtual environment with the following step
 ### Results
 Inside the "results" folder:
 - cmd/: output of requestTimer.py
-- wireshark/: Wireshark packet captures
-
-please run this code from the cp2 directory to decompress the packet captures:
-```
-cd results/
-tar -xzvf wireshark_captures.tar.gz
-```
-
-Output 1 was run with good wifi and output 2 with poor wifi
+- info.md: Information about each capture
 
 # 3 -- Contributions
 

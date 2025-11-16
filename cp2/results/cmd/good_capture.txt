@@ -1,0 +1,24 @@
+Endpoint: /data
+  Average Time: 1.3679 seconds
+  Min Time: 1.2249 seconds
+  Max Time: 1.6201 seconds
+  Median Time: 1.3383 seconds
+  Standard Deviation: 0.1098 seconds
+
+----------------------------------------
+Endpoint: /dl/stat/mean
+  Average Time: 0.0133 seconds
+  Min Time: 0.0112 seconds
+  Max Time: 0.0159 seconds
+  Median Time: 0.0131 seconds
+  Standard Deviation: 0.0013 seconds
+
+----------------------------------------
+Endpoint: /dl/stat/peak
+  Average Time: 0.0142 seconds
+  Min Time: 0.0104 seconds
+  Max Time: 0.0178 seconds
+  Median Time: 0.0138 seconds
+  Standard Deviation: 0.0022 seconds
+
+----------------------------------------
