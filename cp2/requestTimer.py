@@ -1,9 +1,18 @@
 import requests
 import time
+import argparse
 
-URL = 'http://localhost:5000'
+parser = argparse.ArgumentParser(description='Measure request times to specified endpoints.')
+parser.add_argument('--IP', type=str, default='localhost', help='Base URL of the server')
+parser.add_argument('--port', type=int, default=5000, help='Port number of the server')
+parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
+
+args = parser.parse_args()
+URL = f"http://{args.IP}:{args.port}"
 
 def time_request(url):
+    if args.verbose:
+        print(f'Making request to: {url}')
     start_time = time.time()
     response = requests.get(f"{url}")
     end_time = time.time()
@@ -12,8 +21,12 @@ def time_request(url):
 
 def endpoint_statistics(url):
     timings = []
-    for _ in range(5):
+    for i in range(15):
+        if args.verbose:
+            print(f'Request #{i + 1}')
         status_code, elapsed_time = time_request(url)
+        if args.verbose:
+            print(f'Completed in {elapsed_time:.4f}s')
         timings.append(elapsed_time)
     average_time = sum(timings) / len(timings)
     median_time = sorted(timings)[len(timings) // 2]

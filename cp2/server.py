@@ -5,21 +5,21 @@ from segmentJson import filterData
 from dataStatistics import dailyMeans, dailyPeaks
 
 SERVER_PORT = 54011
-DATA_FILEPATHS = ['./data/set1/data-10.json', './data/set1/data-250.json']
+DATA_FILEPATHS = ['./data/set1/data-all.json', './data/set1/data-2024-05-wlan0.json']
 DATA = []
 for filepath in DATA_FILEPATHS:
   with open(filepath, 'r') as f:
     try:
       data = json.load(f)
-      DATA.extend(data)
+      DATA.append(data)
     except json.JSONDecodeError as e:
       print(f"Error decoding JSON data from {filepath}: {e}")
 
 # No sense in computing these values over and over again
 #  By computing them at startup, we can ensure that data response time is most reflective of packet travel
 #  and not of computation time
-DAILY_MEANS = dailyMeans(DATA)
-DAILY_PEAKS = dailyPeaks(DATA)
+DAILY_MEANS = dailyMeans(DATA[1])
+DAILY_PEAKS = dailyPeaks(DATA[1])
 
 #print(DATA)
 
@@ -35,7 +35,7 @@ def hello_world():
 @app.route("/data", methods=['GET'])
 def get_data():
   if not request.args:
-    return DATA
+    return DATA[0]
   else:
     month = request.args.get('m', 0, type=int)
     day = request.args.get('d', 0, type=int)
@@ -57,4 +57,4 @@ def get_peak():
   return DAILY_PEAKS
 
 if __name__ == '__main__':
-  app.run(port=SERVER_PORT)
+  app.run(port=SERVER_PORT, host="0.0.0.0")
