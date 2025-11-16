@@ -13,6 +13,7 @@ To begin, please start by creating a virtual environment with the following step
 
 ### For the packet capture:
 `python3 requestTimer.py --ip <ip> --port <port>`
+- Note that our server is currently configured to run on port 54011
 
 ### Results
 Inside the "results" folder:
@@ -23,7 +24,7 @@ Inside the "results" folder:
 
 ## Alex
 
-Creation of the Flask server
+Creation of the Flask server and data filtering
 
 ## Tim
 
