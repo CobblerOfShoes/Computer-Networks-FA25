@@ -20,14 +20,14 @@ def filterData (entry, Month, Day, Year, Interface, Direction):
     #  print('  Month: ', Month, ' vs. ', entry['timestamp'].split('-')[1])
 
     split_timestamp = entry['timestamp'].split('-')
-    print(split_timestamp)
+    #print(split_timestamp)
 
     if (Month != 0) and (int(split_timestamp[1]) != Month):
         # print('Filtering on month')
         return False
 
     # First two values of third section are the day
-    if (Day != 0) and (int(split_timestamp[2][0:1]) != Day):
+    if (Day != 0) and (int(split_timestamp[2][0:2]) != Day):
         return False
 
     if (Year != 0) and (split_timestamp[0] != str(Year)):
