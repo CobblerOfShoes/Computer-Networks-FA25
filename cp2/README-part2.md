@@ -3,7 +3,8 @@
 To begin, please start by creating a virtual environment with the following steps:
 1) `cd cp2`
 2) `python3 -m venv cp2_env`
-3) `pip3 install -r requirements.txt`
+3) `source cp2_env/bin/activate`
+4) `pip3 install -r requirements.txt`
 
 # 2 -- Running the Code
 
@@ -34,6 +35,7 @@ To begin, please start by creating a virtual environment with the following step
 
 
 ### For the advanced analytics:
+`cd ../analytics`
 `python3 requestTimer.py --ip <ip> --port <port>`
 - Note that our server is currently configured to run on port 54011
 
