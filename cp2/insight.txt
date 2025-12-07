@@ -1,0 +1,22 @@
+Do the good packet captures have any TCP retransmissions? Should they have retransmissions? Why or why not?
+
+> Yes, they do. While we want our network to be the best, it makes sense for packets of this size to have loss on this scale of a network.
+> Since we are connecting wireless, it is possible to have packet loss and retransmissions no matter how good the network is, since many things can collide with wireless transmissions.
+
+What is the worst performing host and worst performing access point when considering at least 10 different captures? What makes it worse? Was your bad capture from Part 1 better or worse?
+
+> The worst performing host was student11.cse.nd.edu, as it had the highest min, max, mean, and median number of retransmissions.
+> The worst access point was b4:0c:25:e0:80:01, as it had the highest max, mean, and median number of retransmissions.
+> The median transmissions of the access points were not too far off, and it looked like on bad test may have skewed the results.
+> Our server we used for our poor packet capture was the second best, and the access point was the best.
+
+Are any of the captures so bad as to be non-functional (in terms of a client using the server)? Why or why not?
+
+> No, as all of the packet captures were on the order of tens of thousands to over a hundred thousand packets, but no capture had more than 100 retransmissions.
+> This is a loss rate of roughly ~1 to ~0.1%, which is very minimal for wireless.
+
+Drawing more broadly and from beyond your tools, how does the latency to the CSE student machine compare to the cloud? Does that play a role in what you observed from a performance perspective? Why or why not?
+
+> Cloud latency would be far greater, as the student machines are quick since we are on the same network as them.
+> Even connecting wirelessly, there are far fewer hops to go through than compared to using the cloud.
+> Thus, doing the same tests connecting to a cloud server would likely produce greater packet loss, as there are more channels for failure.

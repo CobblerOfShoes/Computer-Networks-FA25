@@ -1,0 +1,41 @@
+### Displaying info for each pcap analyzed ###
+=== Capture Info for File: tools/packets/test/pto-good.pcap ===
+Number of packets in file: 157383
+Number of TCP Retransmissions found within the file: 68
+=== Capture Info for File: tools/packets/test/pto-poor.pcap ===
+Number of packets in file: 167711
+Number of TCP Retransmissions found within the file: 48
+=== Capture Info for File: tools/packets/test/pto-good (1).pcap ===
+Number of packets in file: 30082
+Number of TCP Retransmissions found within the file: 50
+=== Capture Info for File: tools/packets/test/pto-poor (1).pcap ===
+Number of packets in file: 38812
+Number of TCP Retransmissions found within the file: 90
+
+### Displaying info for each server contacted ###
+=== Displaying data for server 129.74.152.142 ===
+Mininum retransmission counts: 48
+Maximum retransmission counts: 68
+Mean retransmission counts: 58.0
+Median retransmission counts: 48
+Number of requests to this server: 2
+=== Displaying data for server 129.74.152.143 ===
+Mininum retransmission counts: 50
+Maximum retransmission counts: 90
+Mean retransmission counts: 70.0
+Median retransmission counts: 90
+Number of requests to this server: 2
+
+### Displaying info for each access point used ###
+=== Displaying data for access point 6c:13:d5:86:a2:02 ===
+Mininum retransmission counts: 48
+Maximum retransmission counts: 68
+Mean retransmission counts: 58.0
+Median retransmission counts: 48
+Number of requests to this access point: 2
+=== Displaying data for access point b4:0c:25:e0:80:01 ===
+Mininum retransmission counts: 50
+Maximum retransmission counts: 90
+Mean retransmission counts: 70.0
+Median retransmission counts: 90
+Number of requests to this access point: 2
