@@ -87,6 +87,7 @@ def main():
   aggregated_info = []
 
   # Get info on each file
+  print("### Displaying info for each pcap analyzed ###")
   for file in pcap_filepaths:
     tcp_flow_info = count_tcp_retransmissions(file)
     aggregated_info.append(tcp_flow_info)
@@ -111,6 +112,7 @@ def main():
       info_grouped_by_access_point[access_point] = [info]
 
   # Display server info
+  print("\n### Displaying info for each server contacted ###")
   sorted_server_info = {}
   for server, info_list in info_grouped_by_server.items():
     retransmission_counts = [info[0]['retransmissions'] for info in info_list]
@@ -133,6 +135,7 @@ def main():
     print(f"Number of requests to this server: {info['num_requests']}")
 
   # Display access point info
+  print("\n### Displaying info for each access point used ###")
   sorted_access_point_info = {}
   for access_point, info_list in info_grouped_by_access_point.items():
     retransmission_counts = [info[0]['retransmissions'] for info in info_list]

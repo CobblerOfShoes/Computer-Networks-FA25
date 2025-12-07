@@ -36,19 +36,22 @@ To begin, please start by creating a virtual environment with the following step
 
 ### For the advanced analytics:
 `cd ../analytics`
-`python3 requestTimer.py --ip <ip> --port <port>`
-- Note that our server is currently configured to run on port 54011
+`python3 analyze-perf.py PACKET_DIR`
+- Replace PACKET_DIR with path that holds the packets to analyze
 
 ### Results
 Inside the "results" folder:
-- cmd/: output of requestTimer.py
-- info.md: Information about each capture
+- self.txt, self-plus.txt, and self-big.txt in the `analytics` directory
 
 # 3 -- Contributions
 
 ## Alex
 
+- Implementation of the step 2 program and testing
+- Minor edits to step 1 tools to improve performance
 
 ## Tim
+
+- Implementation of the step 1 tool suite
 
 
