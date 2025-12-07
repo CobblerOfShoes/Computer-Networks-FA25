@@ -13,7 +13,7 @@ def trim_packets(filename, packets):
         sys.exit(1)
 
     new_filename = filename.split('/')
-    new_filename = '/'.join(new_filename[:-1]) + '/pto2-' + new_filename[-1]
+    new_filename = '/'.join(new_filename[:-1]) + '/pto-' + new_filename[-1]
 
     with scapy.PcapWriter(new_filename, append=True, sync=True) as wr:
         for packet in packets:

@@ -10,7 +10,7 @@ import focus_filter
 import pto
 
 def main():
-    parser = argparse.ArgumentParser(description="Find client IP addresses from pcap files.")
+    parser = argparse.ArgumentParser(description="Filter pcaps, trim TCP packets, and then bundle the outputs.")
     parser.add_argument("pcap_dir", help="Path to the pcap directory to smash.")
     args = parser.parse_args()
 
@@ -24,8 +24,6 @@ def main():
     output_data = scapy.PacketList()
 
     pto_files = [os.path.join(args.pcap_dir, filename) for filename in os.listdir(args.pcap_dir) if filename.endswith('.pcap') and filename.startswith('pto-')]
-
-    print(pto_files)
 
     with tarfile.open(output_file, "w:gz") as tar:
         for file_path in pto_files:
