@@ -21,3 +21,6 @@ __pycache__/
 
 # Ignore vscode files
 .vscode/
+
+# Ignore packet captures
+cp2/tools/packets
