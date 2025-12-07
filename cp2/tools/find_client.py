@@ -2,21 +2,19 @@ import scapy.all as scapy
 from scapy.layers.inet import IP, TCP
 import argparse
 import sys
+import os
 
 TCP_SYN_FLAG = 2
 
 def main(filename, find_client=True):
-    try:
-        packets = scapy.rdpcap(filename)
-    except FileNotFoundError:
-        print(f"Error: File '{filename}' not found.")
+    if not os.path.isfile(filename):
+        print(f"ERROR: Could not find file {filename}")
         sys.exit(1)
 
-    for packet in packets:
+    for packet in scapy.PcapReader(filename):
         if packet.haslayer(TCP) and packet.haslayer(IP):
-            if packet[TCP].flags & TCP_SYN_FLAG and (packet[TCP].dport > 54000 and packet[TCP].dport < 54500):  # SYN flag
+            if packet[TCP].flags & TCP_SYN_FLAG and (packet[TCP].dport >= 54000 and packet[TCP].dport <= 54500):  # SYN flag
                 if find_client:
-                    print("HI")
                     print(packet[IP].src)
                     return packet[IP].src
                 else:
