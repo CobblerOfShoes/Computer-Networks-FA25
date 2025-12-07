@@ -13,7 +13,9 @@ def main(filename, find_client=True):
 
     for packet in scapy.PcapReader(filename):
         if packet.haslayer(TCP) and packet.haslayer(IP):
-            if packet[TCP].flags & TCP_SYN_FLAG and (packet[TCP].dport >= 54000 and packet[TCP].dport <= 54500):  # SYN flag
+            if packet[TCP].flags & TCP_SYN_FLAG and \
+               packet[IP].dst.startswith('129.74') and \
+               (packet[TCP].dport >= 54000 and packet[TCP].dport <= 54500):  # SYN flag
                 if find_client:
                     print(packet[IP].src)
                     return packet[IP].src
