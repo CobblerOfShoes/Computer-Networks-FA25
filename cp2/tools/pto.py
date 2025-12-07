@@ -8,7 +8,9 @@ def trim_packets(filename):
     for packet in packets:
         pkt_len = header_length(packet)
         new_packet = bytes(packet)[:pkt_len]
-        scapy.wrpcap(f"pto-{filename}", new_packet, append=True)
+        new_filename = filename.split('/')
+        new_filename = '/'.join(new_filename[:-1]) + '/pto-' + new_filename[-1]
+        scapy.wrpcap(f"{new_filename}", new_packet, append=True)
         
 
 if __name__ == "__main__":
